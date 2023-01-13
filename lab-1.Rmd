@@ -2,13 +2,9 @@
 title: "Lab 1"
 author: "Elke Windschitll"
 date: "2023-01-11"
-output: html_document
----
----
-title: "Lab1"
-author: "{STUDENT NAME}"
-date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -20,8 +16,8 @@ library("janitor")
 library("corrplot")
 dat <- read_csv(file = "https://raw.githubusercontent.com/MaRo406/eds-232-machine-learning/main/data/pumpkin-data.csv")
 ```
-##Case Study: The Pumpkin Market
-The data you just loaded  includes 1757 lines of data about the market for pumpkins, sorted into groupings by city. This is raw data extracted from the Specialty Crops Terminal Markets Standard Reports distributed by the United States Department of Agriculture.
+
+##Case Study: The Pumpkin Market The data you just loaded includes 1757 lines of data about the market for pumpkins, sorted into groupings by city. This is raw data extracted from the Specialty Crops Terminal Markets Standard Reports distributed by the United States Department of Agriculture.
 
 You are loading a pumpkin data set so as to ask questions of it.
 
@@ -79,6 +75,9 @@ Let's take a look at pumpkins sales throughout the year.
 *Question 1:* Create a scatter plot using price on the y-axis and day on the x-axis.
 
 ```{r}
+sales_plot <- ggplot(pumpkins, aes(x = day, y = price)) +
+  geom_point()
+sales_plot
 ```
 
 Now, before we go any further, let's take another look at the data. Notice anything odd?
@@ -97,9 +96,10 @@ Pumpkins seem to be very hard to weigh consistently, so let's filter them by sel
 
 *Question 2* In the first section of the chunk below, use a combination of dplyr::filter() and stringr::str_detect() to achieve what we want.
 
-
 ```{r}
 # Retain only pumpkins with "bushel" in the package column
+new_pumpkins <- pumpkins %>% 
+  filter(str_detect(string = package, pattern = "bushel"))
 # Get the dimensions of the new data
 dim(new_pumpkins)
 # View a few rows of the new data
@@ -134,24 +134,36 @@ new_pumpkins %>%
 theme_set(theme_light())
 # Make a scatter plot of month and price
 new_pumpkins %>% 
-  ggplot(mapping = aes(x = day, y = price)) +
+  ggplot(mapping = aes(x = month, y = price)) +
   geom_point(size = 1.6)
 ```
 
 *Question 3:* Is this a useful plot 🤷? Does anything about it surprise you?
 
+**This does not seem like a very useful plot to me. Prices in September, October, and November vary greatly. It is unsurprising to me that August and December have less variation because less people are probably buying pumpkins then. What is a bit surprising is the gap around 25 in both October and November.**
+
 How do we make it useful? To get charts to display useful data, you usually need to group the data somehow.
 
 *Question 4:* Within new_pumpkins, group the pumpkins into groups based on the month column and then find the mean price for each month (in the next chunk).
 
-Hint: use dplyr::group_by() %>% summarize()
+Hint: use dplyr::group_by() %\>% summarize()
 
 ```{r}
 # Find the average price of pumpkins per month
+pumpkins_by_month <- new_pumpkins %>% 
+  group_by(month) %>% 
+  summarize(price = mean(price))
 ```
-*Question 5:* Now do that again, but continue on and plot the results with a bar plot 
+
+*Question 5:* Now do that again, but continue on and plot the results with a bar plot
+
 ```{r}
 # Find the average price of pumpkins per month then plot a bar chart
+sales_by_month_plot <- pumpkins_by_month %>% 
+  ggplot(aes(x = month, y = price)) +
+  geom_col()
+
+sales_by_month_plot
 ```
 
 #Preprocessing data for modelling using recipes
@@ -206,9 +218,13 @@ The processed data baked_pumpkins has all its predictors encoded confirming that
 
 *Question 6:* From looking at the baked_pumpkins tibble, how many total cities are represented in the data set?
 
+**10 Cities**
+
 baked_pumpkins is a data frame that we can perform computations on. For instance, let's try to find a good correlation between two variables to potentially build a good predictive model. We'll use the function cor() to do this.
 
 ```{r}
+#q6 find number of cities
+length(unique(baked_pumpkins$city_name))
 # Find the correlation between the package and the price
 cor(baked_pumpkins$package, baked_pumpkins$price)
 ```
@@ -216,9 +232,13 @@ cor(baked_pumpkins$package, baked_pumpkins$price)
 *Question 7:* Calculate the correlation between pumpkin price and two other variables in the data set
 
 ```{r}
+cor(baked_pumpkins$city_name, baked_pumpkins$price)
+cor(baked_pumpkins$variety, baked_pumpkins$price)
 ```
 
 *Question 8:* Which of these three variables is most highly correlated with price? Why might this be?
+
+**Variety is most highly correlated with price. This could be because certain types of pumpkins are more rare or take more resources to grow and therefore more expensive in the market.**
 
 Now let's visualize a correlation matrix of all the columns using the corrplot package.
 
@@ -250,6 +270,10 @@ pumpkins_split <- new_pumpkins %>%
 pumpkins_train <- training(pumpkins_split)
 pumpkins_test <- testing(pumpkins_split)
 # Create a recipe for preprocessing the data
+  
+
+
+      # Question here -- what do the following lines do?
 lm_pumpkins_recipe <- recipe(price ~ package, data = pumpkins_train) %>% 
   step_integer(all_predictors(), zero_based = TRUE)
 # Create a linear model specification
@@ -347,5 +371,7 @@ plot_results %>%
 Hmm. The model does not do good job of generalizing the relationship between a package and its corresponding price.
 
 *Question 9* What issues do you see with fitting a linear regression to this data?
+
+**The categorical package types are ordered arbitrarily, resulting in the highest prices in the "2" package rather than the "4" package. The data do not look linear.**
 
 Congratulations, you just created a model that can help predict the price of a few varieties of pumpkins. But you can probably create a better model!
