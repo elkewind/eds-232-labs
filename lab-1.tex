@@ -34,6 +34,46 @@
 \makeatother
 \usepackage{xcolor}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -87,6 +127,12 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 \hypertarget{examine-the-data}{%
 \subsection{Examine the data}\label{examine-the-data}}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{glimpse}\NormalTok{(dat)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## Rows: 1,757
 ## Columns: 27
@@ -119,6 +165,15 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 ## $ ...27             <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ~
 \end{verbatim}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Clean names to the snake\_case convention}
+\NormalTok{pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ dat }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{clean\_names}\NormalTok{(}\AttributeTok{case =} \StringTok{"snake"}\NormalTok{)}
+\CommentTok{\# Return column names}
+\NormalTok{pumpkins }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{names}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ##  [1] "x1"              "city_name"       "type"            "package"        
 ##  [5] "variety"         "sub_variety"     "grade"           "date"           
@@ -132,6 +187,14 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 \hypertarget{select-desired-columns}{%
 \subsection{Select desired columns}\label{select-desired-columns}}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{select}\NormalTok{(variety, city\_name, package, low\_price, high\_price, date)}
+\DocumentationTok{\#\# Print data set}
+\NormalTok{pumpkins }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 5 x 6
 ##   variety     city_name package      low_price high_price date   
@@ -143,6 +206,13 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 ## 5 HOWDEN TYPE BALTIMORE 24 inch bins        90        100 11/5/16
 \end{verbatim}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# Load lubridate}
+\FunctionTok{library}\NormalTok{(lubridate)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## 
 ## Attaching package: 'lubridate'
@@ -153,6 +223,18 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 ## 
 ##     date, intersect, setdiff, union
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Extract the month and day from the dates and add as new columns}
+\NormalTok{pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{date =} \FunctionTok{mdy}\NormalTok{(date),  }
+         \AttributeTok{day =} \FunctionTok{yday}\NormalTok{(date),}
+         \AttributeTok{month =} \FunctionTok{month}\NormalTok{(date))}
+\NormalTok{pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{day)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## # A tibble: 1,757 x 7
@@ -171,6 +253,13 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 ## # ... with 1,747 more rows
 \end{verbatim}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# View the first few rows}
+\NormalTok{pumpkins }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{7}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 7 x 8
 ##   variety     city_name package      low_price high_price date         day month
@@ -187,10 +276,26 @@ Should I buy them in half-bushel baskets or by the 1 1/9 bushel box?
 There are two column dealing with price, high and low. Let's combine
 them into a single average price column.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create a new column price}
+\NormalTok{pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =}\NormalTok{ (low\_price}\SpecialCharTok{+}\NormalTok{ high\_price)}\SpecialCharTok{/}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 Let's take a look at pumpkins sales throughout the year.
 
 \emph{Question 1:} Create a scatter plot using price on the y-axis and
 day on the x-axis.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sales\_plot }\OtherTok{\textless{}{-}} \FunctionTok{ggplot}\NormalTok{(pumpkins, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ day, }\AttributeTok{y =}\NormalTok{ price)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{()}
+\NormalTok{sales\_plot}
+\end{Highlighting}
+\end{Shaded}
 
 \includegraphics{lab-1_files/figure-latex/unnamed-chunk-5-1.pdf}
 
@@ -202,6 +307,14 @@ are sold in 1 1/9 bushel measures, and some in 1/2 bushel measures, some
 per pumpkin, some per pound, and some in big boxes with varying widths.
 
 Let's verify this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Verify the distinct observations in Package column}
+\NormalTok{pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{distinct}\NormalTok{(package)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## # A tibble: 15 x 1
@@ -232,9 +345,27 @@ column and put this in a new data frame ``new\_pumpkins''.
 combination of dplyr::filter() and stringr::str\_detect() to achieve
 what we want.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Retain only pumpkins with "bushel" in the package column}
+\NormalTok{new\_pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(}\FunctionTok{str\_detect}\NormalTok{(}\AttributeTok{string =}\NormalTok{ package, }\AttributeTok{pattern =} \StringTok{"bushel"}\NormalTok{))}
+\CommentTok{\# Get the dimensions of the new data}
+\FunctionTok{dim}\NormalTok{(new\_pumpkins)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## [1] 415   9
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# View a few rows of the new data}
+\NormalTok{new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## # A tibble: 10 x 9
@@ -266,6 +397,20 @@ We'll use the function case\_when() to mutate the Price column depending
 on some conditions. case\_when allows you to vectorise multiple
 if\_else()statements.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Convert the price if the Package contains fractional bushel values}
+\NormalTok{new\_pumpkins }\OtherTok{\textless{}{-}}\NormalTok{ new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{price =} \FunctionTok{case\_when}\NormalTok{(}
+    \FunctionTok{str\_detect}\NormalTok{(package, }\StringTok{"1 1/9"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ price}\SpecialCharTok{/}\NormalTok{(}\FloatTok{1.1}\NormalTok{),}
+    \FunctionTok{str\_detect}\NormalTok{(package, }\StringTok{"1/2"}\NormalTok{) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ price}\SpecialCharTok{*}\DecValTok{2}\NormalTok{,}
+    \ConstantTok{TRUE} \SpecialCharTok{\textasciitilde{}}\NormalTok{ price))}
+\CommentTok{\# View the first few rows of the data}
+\NormalTok{new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{30}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 30 x 9
 ##    variety  city_name package       low_p~1 high_~2 date         day month price
@@ -287,6 +432,17 @@ if\_else()statements.
 \hypertarget{data-visualization}{%
 \subsection{Data Visualization}\label{data-visualization}}
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Set theme}
+\FunctionTok{theme\_set}\NormalTok{(}\FunctionTok{theme\_light}\NormalTok{())}
+\CommentTok{\# Make a scatter plot of month and price}
+\NormalTok{new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ price)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{size =} \FloatTok{1.6}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \includegraphics{lab-1_files/figure-latex/unnamed-chunk-9-1.pdf}
 
 \emph{Question 3:} Is this a useful plot 🤷? Does anything about it
@@ -307,8 +463,28 @@ based on the month column and then find the mean price for each month
 
 Hint: use dplyr::group\_by() \%\textgreater\% summarize()
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Find the average price of pumpkins per month}
+\NormalTok{pumpkins\_by\_month }\OtherTok{\textless{}{-}}\NormalTok{ new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{group\_by}\NormalTok{(month) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{summarize}\NormalTok{(}\AttributeTok{price =} \FunctionTok{mean}\NormalTok{(price))}
+\end{Highlighting}
+\end{Shaded}
+
 \emph{Question 5:} Now do that again, but continue on and plot the
 results with a bar plot
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Find the average price of pumpkins per month then plot a bar chart}
+\NormalTok{sales\_by\_month\_plot }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins\_by\_month }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ month, }\AttributeTok{y =}\NormalTok{ price)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{()}
+
+\NormalTok{sales\_by\_month\_plot}
+\end{Highlighting}
+\end{Shaded}
 
 \includegraphics{lab-1_files/figure-latex/unnamed-chunk-11-1.pdf}
 
@@ -340,6 +516,16 @@ to get it ready for modelling.
 Now, let's create a recipe that prepares our data for modelling by
 substituting a unique integer for all the observations in the predictor
 columns:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Specify a recipe}
+\NormalTok{pumpkins\_recipe }\OtherTok{\textless{}{-}} \FunctionTok{recipe}\NormalTok{(price }\SpecialCharTok{\textasciitilde{}}\NormalTok{ ., }\AttributeTok{data =}\NormalTok{ new\_pumpkins) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{step\_integer}\NormalTok{(}\FunctionTok{all\_predictors}\NormalTok{(), }\AttributeTok{zero\_based =} \ConstantTok{TRUE}\NormalTok{)}
+\CommentTok{\# Print out the recipe}
+\NormalTok{pumpkins\_recipe}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## Recipe
@@ -386,6 +572,18 @@ set.
 Now let's prep and bake our recipes to confirm that under the hood, the
 predictor columns will be first encoded before a model is fit.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Prep the recipe}
+\NormalTok{pumpkins\_prep }\OtherTok{\textless{}{-}} \FunctionTok{prep}\NormalTok{(pumpkins\_recipe)}
+\CommentTok{\# Bake the recipe to extract a preprocessed new\_pumpkins data}
+\NormalTok{baked\_pumpkins }\OtherTok{\textless{}{-}} \FunctionTok{bake}\NormalTok{(pumpkins\_prep, }\AttributeTok{new\_data =} \ConstantTok{NULL}\NormalTok{)}
+\CommentTok{\# Print out the baked data set}
+\NormalTok{baked\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 10 x 9
 ##    variety city_name package low_price high_price  date   day month price
@@ -418,9 +616,23 @@ instance, let's try to find a good correlation between two variables to
 potentially build a good predictive model. We'll use the function cor()
 to do this.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#q6 find number of cities}
+\FunctionTok{length}\NormalTok{(}\FunctionTok{unique}\NormalTok{(baked\_pumpkins}\SpecialCharTok{$}\NormalTok{city\_name))}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## [1] 10
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Find the correlation between the package and the price}
+\FunctionTok{cor}\NormalTok{(baked\_pumpkins}\SpecialCharTok{$}\NormalTok{package, baked\_pumpkins}\SpecialCharTok{$}\NormalTok{price)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## [1] 0.6061713
@@ -429,9 +641,21 @@ to do this.
 \emph{Question 7:} Calculate the correlation between pumpkin price and
 two other variables in the data set
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cor}\NormalTok{(baked\_pumpkins}\SpecialCharTok{$}\NormalTok{city\_name, baked\_pumpkins}\SpecialCharTok{$}\NormalTok{price)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## [1] 0.3236397
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cor}\NormalTok{(baked\_pumpkins}\SpecialCharTok{$}\NormalTok{variety, baked\_pumpkins}\SpecialCharTok{$}\NormalTok{price)}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## [1] -0.863479
@@ -446,6 +670,19 @@ to grow and therefore more expensive in the market.}
 
 Now let's visualize a correlation matrix of all the columns using the
 corrplot package.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load the corrplot package}
+\FunctionTok{library}\NormalTok{(corrplot)}
+\CommentTok{\# Obtain correlation matrix}
+\NormalTok{corr\_mat }\OtherTok{\textless{}{-}} \FunctionTok{cor}\NormalTok{(baked\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+                  \CommentTok{\# Drop columns that are not really informative}
+                  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\FunctionTok{c}\NormalTok{(low\_price, high\_price)))}
+\CommentTok{\# Make a correlation plot between the variables}
+\FunctionTok{corrplot}\NormalTok{(corr\_mat, }\AttributeTok{method =} \StringTok{"shade"}\NormalTok{, }\AttributeTok{shade.col =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{tl.col =} \StringTok{"black"}\NormalTok{, }\AttributeTok{tl.srt =} \DecValTok{45}\NormalTok{, }\AttributeTok{addCoef.col =} \StringTok{"black"}\NormalTok{, }\AttributeTok{cl.pos =} \StringTok{"n"}\NormalTok{, }\AttributeTok{order =} \StringTok{"original"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \includegraphics{lab-1_files/figure-latex/unnamed-chunk-16-1.pdf}
 
@@ -469,6 +706,28 @@ define a recipe that will encode the predictor column into a set of
 integers, then build a model specification. We won't prep and bake our
 recipe since we already know it will preprocess the data as expected.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\CommentTok{\# Split the data into training and test sets}
+\NormalTok{pumpkins\_split }\OtherTok{\textless{}{-}}\NormalTok{ new\_pumpkins }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{initial\_split}\NormalTok{(}\AttributeTok{prop =} \FloatTok{0.8}\NormalTok{)}
+\CommentTok{\# Extract training and test data}
+\NormalTok{pumpkins\_train }\OtherTok{\textless{}{-}} \FunctionTok{training}\NormalTok{(pumpkins\_split)}
+\NormalTok{pumpkins\_test }\OtherTok{\textless{}{-}} \FunctionTok{testing}\NormalTok{(pumpkins\_split)}
+\CommentTok{\# Create a recipe for preprocessing the data}
+  
+
+      \CommentTok{\# Question here {-}{-} what do the following lines do?}
+\NormalTok{lm\_pumpkins\_recipe }\OtherTok{\textless{}{-}} \FunctionTok{recipe}\NormalTok{(price }\SpecialCharTok{\textasciitilde{}}\NormalTok{ package, }\AttributeTok{data =}\NormalTok{ pumpkins\_train) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{step\_integer}\NormalTok{(}\FunctionTok{all\_predictors}\NormalTok{(), }\AttributeTok{zero\_based =} \ConstantTok{TRUE}\NormalTok{)}
+\CommentTok{\# Create a linear model specification}
+\NormalTok{lm\_spec }\OtherTok{\textless{}{-}} \FunctionTok{linear\_reg}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{set\_engine}\NormalTok{(}\StringTok{"lm"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{set\_mode}\NormalTok{(}\StringTok{"regression"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 Now that we have a recipe and a model specification, we need to find a
 way of bundling them together into an object that will first preprocess
 the data (prep+bake behind the scenes), fit the model on the
@@ -478,6 +737,17 @@ activities.
 So let's bundle everything up into a workflow. A workflow is a container
 object that aggregates information required to fit and predict from a
 model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Hold modelling components in a workflow}
+\NormalTok{lm\_wf }\OtherTok{\textless{}{-}} \FunctionTok{workflow}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{add\_recipe}\NormalTok{(lm\_pumpkins\_recipe) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{add\_model}\NormalTok{(lm\_spec)}
+\CommentTok{\# Print out the workflow}
+\NormalTok{lm\_wf}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## == Workflow ====================================================================
@@ -496,6 +766,16 @@ model.
 \end{verbatim}
 
 A workflow can be fit/trained in much the same way a model can.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Train the model}
+\NormalTok{lm\_wf\_fit }\OtherTok{\textless{}{-}}\NormalTok{ lm\_wf }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{fit}\NormalTok{(}\AttributeTok{data =}\NormalTok{ pumpkins\_train)}
+\CommentTok{\# Print the model coefficients learned }
+\NormalTok{lm\_wf\_fit}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{verbatim}
 ## == Workflow [trained] ==========================================================
@@ -533,6 +813,21 @@ the model is working.
 Let's start with making predictions for the test set then bind the
 columns to the test set.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Make predictions for the test set}
+\NormalTok{predictions }\OtherTok{\textless{}{-}}\NormalTok{ lm\_wf\_fit }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{predict}\NormalTok{(}\AttributeTok{new\_data =}\NormalTok{ pumpkins\_test)}
+\CommentTok{\# Bind predictions to the test set}
+\NormalTok{lm\_results }\OtherTok{\textless{}{-}}\NormalTok{ pumpkins\_test }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(}\FunctionTok{c}\NormalTok{(package, price)) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{bind\_cols}\NormalTok{(predictions)}
+\CommentTok{\# Print the first ten rows of the tibble}
+\NormalTok{lm\_results }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 10 x 3
 ##    package              price .pred
@@ -566,6 +861,15 @@ relative metric in which the higher the value, the better the fit of the
 model. In essence, this metric represents how much of the variance
 between predicted and actual label values the model is able to explain.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Evaluate performance of linear regression}
+\FunctionTok{metrics}\NormalTok{(}\AttributeTok{data =}\NormalTok{ lm\_results,}
+        \AttributeTok{truth =}\NormalTok{ price,}
+        \AttributeTok{estimate =}\NormalTok{ .pred)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 3 x 3
 ##   .metric .estimator .estimate
@@ -582,6 +886,24 @@ use the predictions made to overlay a line of best fit.
 This means we'll have to prep and bake the test set in order to encode
 the package column then bind this to the predictions made by our model.
 
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Encode package column}
+\NormalTok{package\_encode }\OtherTok{\textless{}{-}}\NormalTok{ lm\_pumpkins\_recipe }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{prep}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{bake}\NormalTok{(}\AttributeTok{new\_data =}\NormalTok{ pumpkins\_test) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{select}\NormalTok{(package)}
+\CommentTok{\# Bind encoded package column to the results}
+\NormalTok{ plot\_results }\OtherTok{\textless{}{-}}\NormalTok{ lm\_results }\SpecialCharTok{\%\textgreater{}\%}
+ \FunctionTok{bind\_cols}\NormalTok{(package\_encode }\SpecialCharTok{\%\textgreater{}\%}
+               \FunctionTok{rename}\NormalTok{(}\AttributeTok{package\_integer =}\NormalTok{ package)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{relocate}\NormalTok{(package\_integer, }\AttributeTok{.after =}\NormalTok{ package)}
+\CommentTok{\# Print new results data frame}
+\NormalTok{plot\_results }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{5}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \begin{verbatim}
 ## # A tibble: 5 x 4
 ##   package              package_integer price .pred
@@ -592,6 +914,18 @@ the package column then bind this to the predictions made by our model.
 ## 4 1 1/9 bushel cartons               0  13.6  20.1
 ## 5 1 1/9 bushel cartons               0  15.5  20.1
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Make a scatter plot}
+\NormalTok{plot\_results }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ package\_integer, }\AttributeTok{y =}\NormalTok{ price)) }\SpecialCharTok{+}
+   \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{size =} \FloatTok{1.6}\NormalTok{) }\SpecialCharTok{+}
+   \CommentTok{\# Overlay a line of best fit}
+   \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ .pred), }\AttributeTok{color =} \StringTok{"orange"}\NormalTok{, }\AttributeTok{size =} \FloatTok{1.2}\NormalTok{) }\SpecialCharTok{+}
+   \FunctionTok{xlab}\NormalTok{(}\StringTok{"package"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \includegraphics{lab-1_files/figure-latex/encode_package-1.pdf}
 
