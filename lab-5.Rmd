@@ -1,0 +1,333 @@
+---
+title: "Lab 5"
+author: "Elke Windschitl & Lewis White"
+date: "2023-02-08"
+output: html_document
+---
+
+This week's lab is a musical lab. You'll be requesting data from the Spotify API and using it to build k-nearest neighbor and decision tree models.
+
+In order to use the Spotify you must have a Spotify account. If you don't have one, sign up for a free one here: <https://www.spotify.com/us/signup>
+
+Once you have an account, go to Spotify for developers (<https://developer.spotify.com/>) and log in. Click the green "Create a Client ID" button to fill out the form to create an app create an app so you can access the API.
+
+On your developer dashboard page, click on the new app you just created. On the app's dashboard page you will find your Client ID just under the header name of your app. Click "Show Client Secret" to access your secondary Client ID. When you do this you'll be issued a Spotify client ID and client secret key.
+
+You have two options for completing this lab.
+
+**Option 1**: **Classify by users**. Build models that predict whether a given song will be in your collection vs. a partner in class. This requires that you were already a Spotify user so you have enough data to work with. You will download your data from the Spotify API and then exchange with another member of class.
+
+**Option 2**: **Classify by genres**. Build models that predict which genre a song belongs to. This will use a pre-existing Spotify dataset available from Kaggle.com (<https://www.kaggle.com/datasets/mrmorj/dataset-of-songs-in-spotify>)
+
+```{r}
+# Load libraries
+library(spotifyr) #API interaction
+library(tidyverse)
+library(tidymodels)
+library(rsample)   
+library(recipes)
+library(skimr)
+library(kknn)
+library(hrbrthemes)
+library(viridis)
+```
+
+Client ID and Client Secret are required to create and access token that is required to interact with the API. You can set them as system values so we don't have to do provide them each time.
+
+```{r}
+access_token <- get_spotify_access_token() #takes ID and SECRET, sends to Spotify and receives an access token
+```
+
+> *This may result in an error:*
+>
+> INVALID_CLIENT: Invalid redirect URI
+>
+> *This can be resolved by editing the callback settings on your app. Go to your app and click "Edit Settings". Under redirect URLs paste this: <http://localhost:1410/> and click save at the bottom.*
+
+**Option 1: Data Preparation**
+
+You can use get_my_saved_tracks() to request all your liked tracks. It would be good if you had at least 150-200 liked tracks so the model has enough data to work with. If you don't have enough liked tracks, you can instead use get_my_recently_played(), and in that case grab at least 500 recently played tracks if you can.
+
+The Spotify API returns a dataframe of tracks and associated attributes. However, it will only return up to 50 (or 20) tracks at a time, so you will have to make multiple requests. Use a function to combine all your requests in one call.
+
+```{r}
+# Get first 50 songs
+my_songs <- get_my_saved_tracks(limit = 50)
+
+# for each set of 50 songs, bind to my_songs
+for(i in seq(50, 450, 50)) {
+  songs <- get_my_saved_tracks(limit = 50, offset(i))
+  my_songs <- rbind(my_songs, songs)
+}
+```
+
+Once you have your tracks, familiarize yourself with this initial dataframe. You'll need to request some additional information for the analysis. If you give the API a list of track IDs using get_track_audio_features(), it will return an audio features dataframe of all the tracks and some attributes of them.
+
+```{r}
+# Initiate empty song features vector
+song_features <- c()
+
+# Retreive the song features on track.id for all songs
+for(i in seq(1, 401, 100)) {
+  feats <- get_track_audio_features(my_songs$track.id[seq(i, (i + 99), 1)])
+  song_features <- rbind(song_features, feats)
+}
+
+# Bind song names to track features
+song_features <- cbind(my_songs$track.name, song_features) %>% 
+  rename("track.name" = "my_songs$track.name")
+
+#write_csv(song_features, "elke_liked_tracks.csv")
+```
+
+These track audio features are the predictors we are interested in, but this dataframe doesn't have the actual names of the tracks. Append the 'track.name' column from your favorite tracks database.
+
+Find a class mate whose data you would like to use. Add your partner's data to your dataset. Create a new column that will contain the outcome variable that you will try to predict. This variable should contain two values that represent if the track came from your data set or your partner's.
+
+```{r}
+lewis_liked_tracks <- read_csv("lewis_liked_tracks.csv") %>% 
+  mutate(listener = "Lewis")
+elke_liked_tracks <- song_features %>% 
+  mutate(listener = "Elke")
+
+all_tracks <- rbind(lewis_liked_tracks, elke_liked_tracks) %>% 
+  select(-(type:analysis_url)) #remove unnecessary columns
+```
+
+##Data Exploration (both options)
+
+Let's take a look at your data. Do some exploratory summary stats and visualization.
+
+For example: What are the most danceable tracks in your dataset? What are some differences in the data between users?
+
+**From the brief (and non-exhaustive) exploration below, we can see that Lewis on average listens to songs that are more danceable, energetic, and speechy than me. I tend to listen to songs that are more acoustic than Lewis. Also, I listen to slightly longer songs than Lewis. There is not a significant difference (at a significance level of 0.05) between the instrumentalness of the songs that Lewis and I listen to.**
+
+```{r}
+# Find my most danceable songs
+dancable <- elke_liked_tracks %>%
+  arrange(desc(danceability)) %>% 
+  slice(1:5)
+print(dancable[,c("track.name", "danceability")])
+
+# Find my most acoustic songs
+acoustic <- elke_liked_tracks %>%
+  arrange(desc(acousticness)) %>% 
+  slice(1:5)
+print(acoustic[,c("track.name", "acousticness")])
+
+# Find my highest energy songs
+energy <- elke_liked_tracks %>%
+  arrange(desc(energy)) %>% 
+  slice(1:5)
+print(energy[,c("track.name", "energy")])
+
+# Find my speechiest songs
+speechy <- elke_liked_tracks %>%
+  arrange(desc(speechiness)) %>% 
+  slice(1:5)
+print(speechy[,c("track.name", "speechiness")])
+
+# Find my livest songs
+liveness <- elke_liked_tracks %>%
+  arrange(desc(liveness)) %>% 
+  slice(1:5)
+print(liveness[,c("track.name", "liveness")])
+
+# Find my highest tempo songs
+tempo <- elke_liked_tracks %>%
+  arrange(desc(tempo)) %>% 
+  slice(1:5)
+print(tempo[,c("track.name", "tempo")])
+
+# Find my longest songs
+length <- elke_liked_tracks %>%
+  arrange(desc(duration_ms)) %>% 
+  slice(1:5)
+print(length[,c("track.name", "duration_ms")])
+```
+
+```{r}
+# Danceablility Plot
+ggplot(data = all_tracks, aes(x = danceability, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+
+# Acousitcness Plot
+ggplot(data = all_tracks, aes(x = acousticness, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+  
+# Energy Plot
+ggplot(data = all_tracks, aes(x = energy, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+
+# Speechiness Plot
+ggplot(data = all_tracks, aes(x = speechiness, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+
+# Instrumentalness Plot
+ggplot(data = all_tracks, aes(x = instrumentalness, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+
+# Duration Plot
+ggplot(data = all_tracks, aes(x = duration_ms, color = listener, fill= listener)) +
+  geom_density(adjust=1.5, alpha=.6) +
+  theme_minimal() +
+  scale_fill_manual(values = c("#69b3a2", "#404080")) +
+  scale_color_manual(values = c("#69b3a2", "#404080"))
+```
+
+```{r}
+# t.test on lewis vs elke danciness
+t.test(danceability ~ listener, data = all_tracks)
+
+# t.test on lewis vs elke acousticness
+t.test(acousticness ~ listener, data = all_tracks)
+
+# t.test on lewis vs elke energy
+t.test(energy ~ listener, data = all_tracks)
+
+# t.test on lewis vs elke speechiness
+t.test(speechiness ~ listener, data = all_tracks)
+
+# t.test on lewis vs elke instrumentalness
+t.test(instrumentalness ~ listener, data = all_tracks)
+
+# t.test on lewis vs elke duration
+t.test(duration_ms ~ listener, data = all_tracks)
+```
+
+### **Modeling**
+
+Create two models, a k-nearest neighbor model and a decision tree model that predict whether a track belongs to you or your partner's collection.
+
+Then validate and compare the performance of the two models you have created.
+
+Make sure to use appropriate resampling to select the best version of each algorithm to compare and some appropriate visualization of your results.
+
+```{r}
+# If feature is a factor DON'T order
+tracks <- all_tracks %>% mutate_if(is.ordered, .funs = factor, ordered = F) %>% 
+  select(-track.name)
+```
+
+```{r}
+# Preprocessing
+tracks_recipe <- recipe(listener ~ ., data = tracks) %>% # listener is outcome variable, use all variables
+  step_normalize(all_numeric(), -all_outcomes()) %>% # normalize for knn model
+  prep()
+
+# Bake
+baked_tracks <- bake(tracks_recipe, tracks)
+```
+
+```{r}
+set.seed(123)
+#initial split of data, default 70/30
+tracks_split <- initial_split(baked_tracks, 0.7)
+tracks_test <- testing(tracks_split)
+tracks_train <- training(tracks_split)
+```
+
+```{r}
+set.seed(123)
+# 10-fold CV on the training dataset
+cv_folds <-tracks_train %>% 
+  vfold_cv(v=10) #10 is default
+cv_folds
+```
+
+```{r}
+# Define our KNN model with tuning
+knn_spec_tune <- nearest_neighbor(neighbors = tune()) %>% # tune k
+  set_mode("classification") %>% 
+  set_engine("kknn")
+
+# Check the model
+knn_spec_tune
+```
+
+```{r}
+# Define a new workflow
+wf_knn_tune <- workflow() %>% 
+  add_model(knn_spec_tune) %>% 
+  add_recipe(tracks_recipe)
+    
+# Fit the workflow on our predefined folds and hyperparameters
+fit_knn_cv <- wf_knn_tune %>% 
+  tune_grid( 
+    cv_folds, # does tuning based on folds
+    grid = data.frame(neighbors = c(1,5,seq(10,100,10)))) # K=1, K=5, K=10, K=20..., K=100. For each different value for k parameter, model will try it on all folds
+    
+# Check the performance with collect_metrics()
+print(n = 24, fit_knn_cv %>% collect_metrics())
+```
+
+```{r}
+# The final workflow for our KNN model
+final_wf <-
+  wf_knn_tune %>% 
+  finalize_workflow(select_best(fit_knn_cv))
+
+# Check out the final workflow object
+final_wf
+```
+
+```{r}
+# Fitting our final workflow
+final_fit <- final_wf %>% 
+  fit(data = tracks_train)
+# Examine the final workflow
+final_fit
+```
+
+```{r}
+# Fit the model to the test data
+tracks_pred <- predict(final_fit, new_data = tracks_test)
+# Bind to track dataframe
+tracks_final <- cbind(tracks_test, tracks_pred)
+# Build a confusion matrix
+con_matrix <- tracks_final %>%
+  select(listener, .pred_class) %>%
+  table()
+
+# print table
+con_matrix
+
+# Calculate dummy classifier
+dummy <- nrow(lewis_liked_tracks) / (nrow(lewis_liked_tracks) + nrow(elke_liked_tracks))
+print(dummy)
+```
+
+```{r}
+# Write over 'final_fit' with this last_fit() approach
+final_fit <- final_wf %>% last_fit(tracks_split)
+# Collect metrics on the test data!
+tibble <- final_fit %>% collect_metrics()
+tibble
+
+final_accuracy <- tibble %>%
+  filter(.metric == "accuracy") %>%
+  pull(.estimate)
+
+print(paste0("We see here that our k-nearest neighbors model had a higher accuracy at predicting listener than the dummy classifier. The accuracy of the model was ", round(final_accuracy, 3), " and the dummy classifier accuracy was ", round(dummy, 3), "."))
+```
+
+**We see here that our k-nearest neighbors model had a higher accuracy at predicting listener than the dummy classifier.**
+
+```{r}
+
+```
