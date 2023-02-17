@@ -27,6 +27,7 @@ library(kknn)
 library(hrbrthemes)
 library(viridis)
 library(workflows)
+library(baguette)
 ```
 
 Client ID and Client Secret are required to create and access token that is required to interact with the API. You can set them as system values so we don't have to do provide them each time.
@@ -230,13 +231,13 @@ t.test(duration_ms ~ listener, data = all_tracks)
 
 ## **Modeling**
 
-Create four models, a k-nearest neighbor model and a decision tree model that predict whether a track belongs to you or your partner's collection.
+Create four models, that predict whether a track belongs to you or your partner's collection.
 
 Then validate and compare the performance of the two models you have created.
 
 Make sure to use appropriate resampling to select the best version of each algorithm to compare and some appropriate visualization of your results.
 
-Create three final candidate models:
+Create four final candidate models:
 
 1\. k-nearest neighbor
 
@@ -271,25 +272,30 @@ Use appropriate performance evaluation metric(s) for this classification task. A
 ```{r}
 # If feature is a factor DON'T order
 tracks <- all_tracks %>% mutate_if(is.ordered, .funs = factor, ordered = F) %>% 
-  select(-track.name)
-```
+  select(-track.name) %>% 
+  select(-primary_artist)
 
-```{r}
-# Preprocessing
-tracks_recipe <- recipe(listener ~ ., data = tracks) %>% # listener is outcome variable, use all variables
-  step_normalize(all_numeric(), -all_outcomes()) %>% # normalize for knn model
-  prep()
-
-# Bake
-baked_tracks <- bake(tracks_recipe, tracks)
+tracks$listener <- as.factor(tracks$listener)
 ```
 
 ```{r}
 set.seed(123)
 #initial split of data, default 70/30
-tracks_split <- initial_split(baked_tracks, 0.7)
+tracks_split <- initial_split(tracks, 0.7)
 tracks_test <- testing(tracks_split)
 tracks_train <- training(tracks_split)
+```
+
+```{r}
+# Preprocessing
+tracks_recipe <- recipe(listener ~ ., data = tracks_train) %>% # listener is outcome variable, use all variables
+  #step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE) %>% 
+  step_normalize(all_numeric(), -all_outcomes()) %>% # normalize for knn model
+  prep()
+
+# Bake
+tracks_train <- bake(tracks_recipe, tracks_train)
+tracks_test <- bake(tracks_recipe, tracks_test)
 ```
 
 ```{r}
@@ -403,7 +409,7 @@ tree_grid
 
 ```{r}
 wf_tree_tune <- workflow() %>% 
-  add_recipe(listener_rec) %>% 
+  add_recipe(tracks_recipe) %>% 
   add_model(tree_spec_tune)
 ```
 
@@ -447,4 +453,158 @@ final_tree_fit <- last_fit(final_tree, listener~., tracks_split) # does training
 final_tree_fit$.predictions
 final_tree_fit$.metrics
 
+tibble_tree <- final_tree_fit %>% collect_metrics()
+tibble_tree
+
+final_tree_accuracy <- tibble_tree %>%
+  filter(.metric == "accuracy") %>%
+  pull(.estimate)
+
+print(paste0("We see here that our decision tree model had a lower accuracy at predicting listener than the dummy classifier or the k-nearest neighbor model. The accuracy of the decision tree was ", round(final_tree_accuracy, 3), "."))
 ```
+
+### Bagging
+
+```{r}
+set.seed(123)
+# Bagging specifications
+bag_spec <- 
+  bag_tree(cost_complexity = tune(),
+  tree_depth = tune(),
+  min_n = tune()) %>% 
+  set_engine("rpart", times = 75) %>% # 25 ensemble members 
+  set_mode("classification")
+
+bag_grid <- grid_regular(cost_complexity(), tree_depth(), min_n(), levels = 5)
+
+bag_grid
+```
+
+```{r}
+wf_bag <- workflow() %>% 
+  add_recipe(tracks_recipe) %>% 
+  add_model(bag_spec)
+```
+
+```{r}
+doParallel::registerDoParallel() #build trees in parallel
+
+bag_rs <- tune_grid(
+  bag_spec,
+  listener~.,
+  resamples = listener_cv,
+  grid = bag_grid,
+  metrics = metric_set(accuracy)
+)
+
+bag_rs
+```
+
+```{r}
+# Use autoplot() to examine how different parameter configurations relate to accuracy 
+autoplot(bag_rs) + theme_light()
+```
+
+```{r}
+# Select hyperparameters
+show_best(bag_rs)
+select_best(bag_rs)
+```
+
+```{r}
+final_bag <- finalize_model(bag_spec, select_best(bag_rs))
+```
+
+```{r}
+final_bag_fit <- last_fit(final_bag, listener~., tracks_split) # does training fit then final prediction as well
+final_bag_fit$.predictions
+final_bag_fit$.metrics
+
+tibble_bag <- final_bag_fit %>% collect_metrics()
+tibble_bag
+
+final_bag_accuracy <- tibble_bag %>%
+  filter(.metric == "accuracy") %>%
+  pull(.estimate)
+
+print(paste0("We see here that our bagging model had a higher accuracy at predicting listener than the decision tree or dummy classifier. The accuracy of the bagging was ", round(final_bag_accuracy, 3), ". This is still lower than the knn model."))
+```
+
+### Random Forest
+
+```{r}
+set.seed(123)
+# Bagging specifications
+forest_spec <- 
+  rand_forest(min_n = tune(),
+  mtry = tune(),
+  trees =  150) %>% # 15 parameters * 10
+  set_engine("ranger") %>%
+  set_mode("classification")
+
+forest_grid <- grid_regular(min_n(), mtry(c(1,13)), levels = 5)
+
+forest_grid
+```
+
+```{r}
+wf_forest <- workflow() %>% 
+  add_recipe(tracks_recipe) %>% 
+  add_model(forest_spec)
+```
+
+```{r}
+doParallel::registerDoParallel() #build trees in parallel
+
+forest_rs <- tune_grid(
+  forest_spec,
+  listener~.,
+  resamples = listener_cv,
+  grid = forest_grid,
+  metrics = metric_set(accuracy)
+)
+
+forest_rs
+```
+
+```{r}
+# Use autoplot() to examine how different parameter configurations relate to accuracy 
+autoplot(forest_rs) + theme_light()
+```
+
+```{r}
+# Select hyperparameters
+show_best(forest_rs)
+select_best(forest_rs)
+```
+
+```{r}
+final_forest <- finalize_model(forest_spec, select_best(forest_rs))
+```
+
+```{r}
+final_forest_fit <- last_fit(final_forest, listener~., tracks_split) # does training fit then final prediction as well
+final_forest_fit$.predictions
+final_forest_fit$.metrics
+
+tibble_forest <- final_forest_fit %>% collect_metrics()
+tibble_forest
+
+final_forest_accuracy <- tibble_forest %>%
+  filter(.metric == "accuracy") %>%
+  pull(.estimate)
+
+print(paste0("We see here that our random forest had the highest accuracy at predicting listener than the. The accuracy of the forest was ", round(final_forest_accuracy, 3), "."))
+```
+
+```{r}
+model <- c("Dummy", "KNN", "Decision Tree", "Bagging", "Random Forest")
+accuracy <- c(dummy, final_accuracy, final_tree_accuracy, final_bag_accuracy, final_forest_accuracy)
+
+accuracy_df <- data.frame(model, accuracy)
+
+ggplot(accuracy_df, aes(x = model, y = accuracy)) +
+  geom_col(fill = "#69b3a2") +
+  theme_minimal()
+```
+
