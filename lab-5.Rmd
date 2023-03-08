@@ -32,8 +32,6 @@ library(baguette)
 
 Client ID and Client Secret are required to create and access token that is required to interact with the API. You can set them as system values so we don't have to do provide them each time.
 
-
-
 ```{r}
 access_token <- get_spotify_access_token() #takes ID and SECRET, sends to Spotify and receives an access token
 ```
@@ -409,7 +407,7 @@ tree_grid
 
 ```{r}
 wf_tree_tune <- workflow() %>% 
-  add_recipe(tracks_recipe) %>% 
+  add_recipe(listener_rec) %>% 
   add_model(tree_spec_tune)
 ```
 
@@ -424,7 +422,7 @@ listener_cv
 doParallel::registerDoParallel() #build trees in parallel
 #200s
 tree_rs <- tune_grid(
-  tree_spec_tune,
+  wf_tree_tune,
   listener~.,
   resamples = listener_cv,
   grid = tree_grid,
@@ -482,7 +480,7 @@ bag_grid
 
 ```{r}
 wf_bag <- workflow() %>% 
-  add_recipe(tracks_recipe) %>% 
+  add_recipe(listener_rec) %>% 
   add_model(bag_spec)
 ```
 
@@ -490,7 +488,7 @@ wf_bag <- workflow() %>%
 doParallel::registerDoParallel() #build trees in parallel
 
 bag_rs <- tune_grid(
-  bag_spec,
+  wf_bag,
   listener~.,
   resamples = listener_cv,
   grid = bag_grid,
@@ -538,18 +536,18 @@ set.seed(123)
 forest_spec <- 
   rand_forest(min_n = tune(),
   mtry = tune(),
-  trees =  150) %>% # 15 parameters * 10
+  trees = tune()) %>%
   set_engine("ranger") %>%
   set_mode("classification")
 
-forest_grid <- grid_regular(min_n(), mtry(c(1,13)), levels = 5)
+forest_grid <- grid_regular(min_n(), mtry(c(1,13)), trees(), levels = 5)
 
 forest_grid
 ```
 
 ```{r}
 wf_forest <- workflow() %>% 
-  add_recipe(tracks_recipe) %>% 
+  add_recipe(listener_rec) %>% 
   add_model(forest_spec)
 ```
 
@@ -557,7 +555,7 @@ wf_forest <- workflow() %>%
 doParallel::registerDoParallel() #build trees in parallel
 
 forest_rs <- tune_grid(
-  forest_spec,
+  wf_forest,
   listener~.,
   resamples = listener_cv,
   grid = forest_grid,
@@ -594,7 +592,7 @@ final_forest_accuracy <- tibble_forest %>%
   filter(.metric == "accuracy") %>%
   pull(.estimate)
 
-print(paste0("We see here that our random forest had the highest accuracy at predicting listener than the. The accuracy of the forest was ", round(final_forest_accuracy, 3), "."))
+print(paste0("We see here that our random forest had the highest accuracy at predicting listener than the other models. The accuracy of the forest was ", round(final_forest_accuracy, 3), "."))
 ```
 
 ```{r}
@@ -602,9 +600,11 @@ model <- c("Dummy", "KNN", "Decision Tree", "Bagging", "Random Forest")
 accuracy <- c(dummy, final_accuracy, final_tree_accuracy, final_bag_accuracy, final_forest_accuracy)
 
 accuracy_df <- data.frame(model, accuracy)
+print(accuracy_df)
 
 ggplot(accuracy_df, aes(x = model, y = accuracy)) +
   geom_col(fill = "#69b3a2") +
   theme_minimal()
 ```
 
+**From this lab, we can see that using bagging and a random forest greatly improves the accuracy of a decision tree. However, this came with the tradeoff of computation time. It took around 30 minutes to build trees in parallel, whereas it only took a few seconds to make my single decision tree. The k-nearest neighbor algorithm also worked very well here and had essentially the same accuracy as the random forest.**
